@@ -55,7 +55,7 @@ def find_all(elements, name=None, attributes=None, text=None, first_only=False):
 	"""
 	if isinstance(elements, (BeautifulSoup, Tag)):
 		element = elements
-		if element_is(element=element, attributes=attributes, text=text):
+		if element_is(element=element, name=name, attributes=attributes, text=text):
 			return [element]
 		else:
 			if first_only:
@@ -65,11 +65,12 @@ def find_all(elements, name=None, attributes=None, text=None, first_only=False):
 	elif isinstance(elements, str):
 		return []
 	else:
-		return [
+		result = [
 			tag
 			for element in elements
 			for tag in find_all(elements=element, name=name, attributes=attributes, text=text)
 		]
+		return [tag for tag in result if tag is not None and tag != []]
 
 
 def find(elements, name=None, attributes=None, text=None):

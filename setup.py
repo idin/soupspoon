@@ -15,7 +15,7 @@ setup(
 	author='Idin',
 	author_email='py@idin.ca',
 
-	description='Python library with additional functionality for BeautifulSoup',
+	description='Additional functionality for BeautifulSoup',
 	long_description=readme(),
 	long_description_content_type='text/markdown',
 

@@ -101,22 +101,22 @@ def find_between(element1, element2):
 				elif id(child) in ancestors1_ids:
 					start_children = True
 
-
 	return left_side + middle + right_side
 
 
 def find_after(element):
 	if not isinstance(element, (BeautifulSoup, Tag)):
 		raise TypeError(f'{type(element)} is not accepted!')
-	ancestors = get_ancestors(element)
+	ancestors = list(get_ancestors(element))
 	return [uncle for ancestor in ancestors[:-1] for uncle in get_succeeding_siblings(ancestor)]
 
 
 def find_before(element):
 	if not isinstance(element, (BeautifulSoup, Tag)):
 		raise TypeError(f'{type(element)} is not accepted!')
-	ancestors = get_ancestors(element)
+	ancestors = list(get_ancestors(element))
 	return [aunt for ancestor in ancestors[:-1][::-1] for aunt in get_preceding_siblings(ancestor)]
+
 
 def find_except(element):
 	if not isinstance(element, (BeautifulSoup, Tag)):
