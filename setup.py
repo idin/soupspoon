@@ -8,7 +8,7 @@ def readme():
 
 setup(
 	name='silverware',
-	version='0.1',
+	version='2019.12.29.4',
 	license='MIT',
 
 	url='https://github.com/idin/silverware',
@@ -29,7 +29,7 @@ setup(
 	],
 
 	packages=find_packages(exclude=["jupyter_tests", ".idea", ".git"]),
-	install_requires=['bs4'],
+	install_requires=['bs4', 'pandas'],
 	python_requires='~=3.6',
 	zip_safe=False
 )

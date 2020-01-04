@@ -11,6 +11,8 @@ def replace_images_with_text(element):
 def clean_html_text(html, replace_images=False):
 	if isinstance(html, str):
 		return html
+	elif html is None:
+		return None
 	else:
 		if replace_images:
 			html = replace_images_with_text(element=html)

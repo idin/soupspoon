@@ -1,0 +1,2 @@
+class ElementTypeError(TypeError):
+	pass

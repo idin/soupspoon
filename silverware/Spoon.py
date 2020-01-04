@@ -6,19 +6,47 @@ from .clone_beautiful_soup_tag import clone_beautiful_soup_tag
 from .find_links import find_links
 from .read_table import read_tables
 from .get_lists import get_lists
-from bs4 import BeautifulSoup, Tag
+from .get_same_type_siblings import get_next_same_type_sibling
+
+from bs4 import BeautifulSoup, Tag, NavigableString
 import warnings
 
 
 class Spoon:
 	def __init__(self, soup):
 		"""
-		:param list[Tag] or list[BeautifulSoup] or Tag or BeautifulSoup soup:
+		:param list[Tag] or list[BeautifulSoup] or Tag or BeautifulSoup soup or Spoon or list[Spoon]:
 		"""
-		if isinstance(soup, (Tag, BeautifulSoup)):
+		if isinstance(soup, (Tag, BeautifulSoup, NavigableString)):
 			self._soup = soup
+		elif isinstance(soup, Spoon):
+			self._soup = soup.soup
 		else:
-			self._soup = list(soup)
+			self._soup = []
+			for x in soup:
+				if isinstance(x, (Tag, BeautifulSoup, NavigableString)):
+					self._soup.append(x)
+				elif isinstance(x, Spoon):
+					self._soup.append(x.soup)
+				else:
+					raise TypeError(f'soup cannot consist of "{x}" whose type is {type(x)}')
+
+	def extract(self):
+		if isinstance(self._soup, Spoon):
+			return self._soup.extract()
+		elif isinstance(self._soup, (Tag, BeautifulSoup, NavigableString)):
+			return self._soup.extract()
+		else:
+			return [x.extract() for x in self._soup]
+
+	def __repr__(self):
+		return str(self)
+
+	def __str__(self):
+		if isinstance(self._soup, list):
+			return '\n'.join([str(x) for x in self._soup])
+		else:
+			return str(self._soup)
 
 	@property
 	def soup(self):
@@ -49,7 +77,10 @@ class Spoon:
 		"""
 		return self.clone(soup=self.soup, in_spoon=True)
 
-	def filter(self=None, name=None, attributes=None, text=None, first_only=False, in_spoon=True, soup=None):
+	def filter(
+			self=None, name=None, attributes=None, text=None, first_only=False, in_spoon=True, soup=None,
+			first_child=False, ignore_name=None, ignore_attributes=None
+	):
 		"""
 		:param list[BeautifulSoup] or list[Tag] or list[str] or list[list] or Tag or BeautifulSoup or Spoon soup:
 		:param str or NoneType name:
@@ -63,11 +94,51 @@ class Spoon:
 		if isinstance(soup, Spoon):
 			soup = soup.soup
 
-		result = find_all(elements=soup, name=name, attributes=attributes, text=text, first_only=first_only)
+		result = find_all(
+			elements=soup, name=name, attributes=attributes, text=text,
+			first_found=first_only, first_child=first_child,
+			ignore_name=ignore_name, ignore_attributes=ignore_attributes
+		)
 		if in_spoon:
 			return Spoon(soup=result)
 		else:
 			return result
+
+	def get_sections(self=None, sections=None, soup=None, in_spoon=True):
+		"""
+		:type sections: str or list
+		:type soup: list[BeautifulSoup] or list[Tag] or list[str] or list[list] or Tag or BeautifulSoup or Spoon
+		:type in_spoon: bool
+		:rtype: Tag or BeautifulSoup or list[Tag] or list[BeautifulSoup] or Spoon
+		"""
+		if self is not None:
+			soup = soup or self.soup
+		if isinstance(soup, Spoon):
+			soup = soup.soup
+
+		if isinstance(sections, str):
+			sections = [sections]
+
+		headings = find_all(elements=soup, name=[f'h{i}' for i in range(10)])
+		spoons = []
+		for section_name in sections:
+			for header in headings:
+				if header.text.lower().startswith(section_name.lower()):
+					next_header = get_next_same_type_sibling(header)
+					if next_header is None:
+						spoon = Spoon(soup=soup).after(element=header)
+					else:
+						spoon = Spoon(soup=soup).between(element1=header, element2=next_header)
+					spoons.append(spoon)
+					break
+			else:
+				raise KeyError(f'section "{section_name}" not found!')
+
+		result = Spoon(soup=spoons)
+		if in_spoon:
+			return result
+		else:
+			return result.soup
 
 	def filter_out(self=None, in_spoon=True, soup=None):
 		"""
@@ -89,7 +160,10 @@ class Spoon:
 		else:
 			return result
 
-	def find_all(self=None, name=None, attributes=None, text=None, in_spoon=True, soup=None):
+	def find_all(
+			self=None, name=None, attributes=None, text=None, in_spoon=True, soup=None, first_only=False,
+			first_child=False, ignore_name=None, ignore_attributes=None
+	):
 		"""
 		:param NoneType or BeautifulSoup or Tag soup:
 		:param str or NoneType name:
@@ -103,7 +177,10 @@ class Spoon:
 		if isinstance(soup, Spoon):
 			soup = soup.soup
 
-		return self.filter(soup=soup, name=name, attributes=attributes, text=text, in_spoon=in_spoon)
+		return self.filter(
+			soup=soup, name=name, attributes=attributes, text=text, in_spoon=in_spoon, first_only=first_only,
+			first_child=first_child, ignore_name=ignore_name, ignore_attributes=ignore_attributes
+		)
 
 	def find(self=None, name=None, attributes=None, text=None, in_spoon=True, soup=None):
 		"""
@@ -304,3 +381,13 @@ class Spoon:
 		if self is not None:
 			element = element or self.soup
 		return get_lists(elements=element, links_only=links_only, base=base_url)
+
+	def __add__(self, other):
+		"""
+		:type other: Spoon
+		:rtype: Spoon
+		"""
+
+		soup1 = self.soup if isinstance(self.soup, list) else [self.soup]
+		soup2 = other.soup if isinstance(other.soup, list) else [other.soup]
+		return Spoon(soup=soup1 + soup2)

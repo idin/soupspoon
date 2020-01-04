@@ -1,11 +1,14 @@
 from bs4 import Tag, NavigableString, BeautifulSoup
-
+from .exceptions import ElementTypeError
 
 def clone_beautiful_soup_tag(elements):
 	"""
 	:type element: Tag
 	:rtype: Tag
 	"""
+	if elements is None:
+		raise ElementTypeError('elements is None!')
+
 	if isinstance(elements, (Tag, NavigableString, BeautifulSoup)):
 		element = elements
 		if isinstance(element, NavigableString):
