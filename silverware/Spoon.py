@@ -3,12 +3,14 @@ from .find_between import find_between, find_after, find_before, find_except
 from .find_between import get_ancestors
 from .find_between import get_siblings, get_preceding_siblings, get_succeeding_siblings
 from .clone_beautiful_soup_tag import clone_beautiful_soup_tag
-from .find_links import find_links
+from .find_links import find_links, parse_link
 from .read_table import read_tables
 from .get_lists import get_lists
 from .get_same_type_siblings import get_next_same_type_sibling
+from .clean_name import clean_name
+from .flatten_dictionaries_and_lists import flatten_dictionaries_and_lists
 
-from bs4 import BeautifulSoup, Tag, NavigableString
+from bs4 import BeautifulSoup, Tag, NavigableString, PageElement
 import warnings
 
 
@@ -260,11 +262,14 @@ class Spoon:
 	def children(cls, element, in_spoon=True):
 		if isinstance(element, cls):
 			element = element.soup
-		result = element.children
+		if isinstance(element, list):
+			return element
+
+		result = list(element.children)
 		if result is None:
 			raise RuntimeError('element does not have a children attribute!')
 		elif len(result) == 0:
-			warnings.warn('element does not have children!')
+			return []
 		if in_spoon:
 			return cls(soup=result)
 		else:
@@ -391,3 +396,145 @@ class Spoon:
 		soup1 = self.soup if isinstance(self.soup, list) else [self.soup]
 		soup2 = other.soup if isinstance(other.soup, list) else [other.soup]
 		return Spoon(soup=soup1 + soup2)
+
+	@classmethod
+	def _convert_to_list(cls, soup, extract_text=True, extract_tables=True, ignore_single_parents=False, keep_names=True, function=None, base_url=None):
+		"""
+		converts a BeautifulSoup or a Spoon full of BeautifulSoup into a list of lists/dictionaries
+		:type soup: BeautifulSoup or Spoon
+		:type extract_text: bool
+		:type keep_names: bool
+		:type function: callable
+		:rtype: str or list[str] or list[list]
+		"""
+
+		if isinstance(soup, str) or soup is None:
+			return soup
+		elif isinstance(soup, list):
+			if len(soup) == 1 and ignore_single_parents:
+				return cls._convert_to_list(
+					soup=soup[0], extract_text=extract_text, extract_tables=extract_tables,
+					ignore_single_parents=ignore_single_parents,
+					keep_names=keep_names, function=function, base_url=base_url
+				)
+			elif len(soup) > 0:
+				return [
+					cls._convert_to_list(
+						soup=x,
+						extract_text=extract_text,
+						extract_tables=extract_tables,
+						ignore_single_parents=ignore_single_parents,
+						keep_names=keep_names,
+						function=function,
+						base_url=base_url
+					)
+					for x in soup if x is not None
+				]
+			else:
+				return None
+		elif isinstance(soup, Spoon):
+			return cls._convert_to_list(
+				soup=soup.soup,
+				extract_text=extract_text,
+				ignore_single_parents=ignore_single_parents,
+				keep_names=keep_names,
+				function=function
+			)
+		elif isinstance(soup, (BeautifulSoup, Tag, PageElement)):
+			if soup.name == 'table' and extract_tables:
+				result = read_tables(tables=soup, base_url=base_url)
+				if keep_names:
+					return {clean_name(soup=soup): result}
+				else:
+					return result
+
+			elif len(Spoon.children(element=soup, in_spoon=False)) == 1 and ignore_single_parents:
+				result = cls._convert_to_list(
+					soup=Spoon.children(element=soup, in_spoon=False)[0],
+					extract_text=extract_text,
+					extract_tables=extract_tables,
+					ignore_single_parents=ignore_single_parents,
+					keep_names=keep_names,
+					function=function,
+					base_url=base_url
+				)
+
+				if keep_names:
+					return {clean_name(soup=soup): result}
+				else:
+					return result
+
+			elif len(Spoon.children(element=soup, in_spoon=False)) > 0:
+				result = [
+					cls._convert_to_list(
+						soup=child,
+						extract_text=extract_text,
+						extract_tables=extract_tables,
+						ignore_single_parents=ignore_single_parents,
+						keep_names=keep_names,
+						function=function,
+						base_url=base_url
+					)
+					for child in Spoon.children(element=soup)
+				]
+				non_none = [x for x in result if x is not None]
+
+				if keep_names:
+					return {clean_name(soup=soup): non_none}
+				else:
+					return non_none
+
+			else:
+				if isinstance(soup, NavigableString):
+					result = str(soup)
+				elif extract_text or soup.name is None:
+					result = str(soup.text)
+				elif soup.name == 'a':
+					result = parse_link(element=soup, base=base_url)
+				else:
+					result = soup
+
+				if function is not None:
+					result = function(result)
+
+				if keep_names:
+					return {clean_name(soup=soup): result}
+				else:
+					return result
+		else:
+			raise TypeError(f'cannot accept objects of type {type(soup)}')
+
+	def convert_to_list(self=None, soup=None, extract_text=True, extract_tables=True, ignore_single_parents=False, keep_names=True, function=None, base_url=None, flatten=True):
+		"""
+		converts a BeautifulSoup or a Spoon full of BeautifulSoup into a list of lists/dictionaries
+		:type soup: BeautifulSoup or Spoon or list[BeautifulSoup] or list[Spoon]
+		:type extract_text: bool
+		:type function: callable
+		:rtype: str or list[str] or list[list]
+		"""
+		if self is None:
+			result = Spoon._convert_to_list(
+				soup=soup,
+				extract_text=extract_text,
+				extract_tables=extract_tables,
+				ignore_single_parents=ignore_single_parents,
+				keep_names=keep_names,
+				function=function,
+				base_url=base_url
+			)
+		else:
+
+			result = self._convert_to_list(
+				soup=soup or self,
+				extract_text=extract_text,
+				extract_tables=extract_tables,
+				ignore_single_parents=ignore_single_parents,
+				keep_names=keep_names,
+				function=function,
+				base_url=base_url
+			)
+
+		if flatten:
+			return flatten_dictionaries_and_lists(result)
+		else:
+			return result

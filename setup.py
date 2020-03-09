@@ -8,7 +8,7 @@ def readme():
 
 setup(
 	name='silverware',
-	version='2019.12.29.4',
+	version='2020.1.6',
 	license='MIT',
 
 	url='https://github.com/idin/silverware',
