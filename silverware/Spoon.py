@@ -9,6 +9,7 @@ from .get_lists import get_lists
 from .get_same_type_siblings import get_next_same_type_sibling
 from .clean_name import clean_name
 from .flatten_dictionaries_and_lists import flatten_dictionaries_and_lists
+from .get_text import get_text
 
 from bs4 import BeautifulSoup, Tag, NavigableString, PageElement
 import warnings
@@ -538,3 +539,24 @@ class Spoon:
 			return flatten_dictionaries_and_lists(result)
 		else:
 			return result
+
+	def unwrap(self, name=None, attributes=None, smooth=False):
+		parents = []
+		for tag in self.find_all(name=name, attributes=attributes):
+			tag.unwrap()
+			if smooth and tag.parent is not None and tag.parent not in parents:
+				parents.append(tag.parent)
+		for tag in parents:
+			tag.smooth()
+		return self
+
+	def remove(self, name=None, attributes=None):
+		for tag in self.find_all(name=name, attributes=attributes):
+			tag.extract()
+		return self
+
+	def clean_text(self):
+		return self.unwrap(name='span', smooth=True).remove(name='br')
+
+	def get_text(self, sep=' ', flatten=True):
+		return get_text(tags=self.soup, sep=sep, flatten=flatten)

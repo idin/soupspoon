@@ -8,3 +8,4 @@ from .find_between import get_succeeding_siblings, get_preceding_siblings, get_s
 from .Spoon import Spoon
 from .separate_row_header import separate_row_header
 from .get_same_type_siblings import get_same_type_siblings
+from .HtmlFile import HtmlFile

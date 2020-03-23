@@ -29,7 +29,7 @@ setup(
 	],
 
 	packages=find_packages(exclude=["jupyter_tests", ".idea", ".git"]),
-	install_requires=['bs4', 'pandas'],
+	install_requires=['bs4', 'pandas', 'disk', 'lxml', 'slytherin'],
 	python_requires='~=3.6',
 	zip_safe=False
 )
