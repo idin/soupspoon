@@ -9,7 +9,6 @@ from .get_lists import get_lists
 from .get_same_type_siblings import get_next_same_type_sibling
 from .clean_name import clean_name
 from .flatten_dictionaries_and_lists import flatten_dictionaries_and_lists
-from .get_text import get_text
 
 from bs4 import BeautifulSoup, Tag, NavigableString, PageElement
 import warnings
@@ -33,6 +32,7 @@ class Spoon:
 					self._soup.append(x.soup)
 				else:
 					raise TypeError(f'soup cannot consist of "{x}" whose type is {type(x)}')
+		self._paragraphs = None
 
 	def extract(self):
 		if isinstance(self._soup, Spoon):
@@ -554,9 +554,3 @@ class Spoon:
 		for tag in self.find_all(name=name, attributes=attributes):
 			tag.extract()
 		return self
-
-	def clean_text(self):
-		return self.unwrap(name='span', smooth=True).remove(name='br')
-
-	def get_text(self, sep=' ', flatten=True):
-		return get_text(tags=self.soup, sep=sep, flatten=flatten)

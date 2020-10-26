@@ -9,6 +9,14 @@ class HtmlFile(Path):
 	def __init__(self, string, show_size=False):
 		super().__init__(string=string, show_size=show_size)
 		self._soup = None
+		self._spoon = None
+		self._paragraphs = None
+
+	def __repr__(self):
+		return self.name_and_extension
+
+	def __str__(self):
+		return repr(self)
 
 	@property
 	def soup(self):
@@ -24,4 +32,15 @@ class HtmlFile(Path):
 		"""
 		:rtype: Spoon
 		"""
-		return Spoon(soup=self.soup)
+		if self._spoon is None:
+			self._spoon = Spoon(soup=self.soup)
+		return self._spoon
+
+	def extract_soup(self):
+		"""
+		:rtype: BeautifulSoup
+		"""
+		soup = self.soup
+		self._soup = None
+		self._spoon = None
+		return soup

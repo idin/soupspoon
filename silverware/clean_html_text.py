@@ -5,7 +5,7 @@ def replace_images_with_text(element):
 	html = clone_beautiful_soup_tag(element)
 	for elem in html.find_all('img'):
 		if 'alt' in elem.attrs:
-			elem.string = elem.attrs['alt']
+			elem.string_for_display = elem.attrs['alt']
 	return html
 
 def clean_html_text(html, replace_images=False):
