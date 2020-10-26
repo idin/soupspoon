@@ -2,3 +2,4 @@ build
 silverware.egg-info
 dist
 *.lucy
+*.lucy
