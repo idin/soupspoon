@@ -1,10 +1,11 @@
-from bs4 import Tag, NavigableString, BeautifulSoup
+from bs4 import BeautifulSoup
+from bs4.element import Tag, NavigableString
 from .exceptions import ElementTypeError
 
 def clone_beautiful_soup_tag(elements):
 	"""
-	:type element: Tag
-	:rtype: Tag
+	:type element: Tag or NavigableString or BeautifulSoup
+	:rtype: Tag or NavigableString or BeautifulSoup
 	"""
 	if elements is None:
 		raise ElementTypeError('elements is None!')

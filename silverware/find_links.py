@@ -1,8 +1,16 @@
 from .clean_html_text import clean_html_text
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 class Link:
 	def __init__(self, element=None, url=None, text=False, base=None):
+		"""
+
+		:type element: BeautifulSoup or Tag or NoneType
+		:type url: str or NoneType
+		:type text: str or NoneType
+		:type base: str or NoneType
+		"""
 		if element is not None:
 			a = element.find('a')
 			if a:
@@ -23,7 +31,14 @@ class Link:
 		self._url, self._text = state
 
 	def __hashkey__(self):
-		return (repr(self.url))
+		"""
+		used in smart_hash function
+		:type: str
+		"""
+		return (repr(self.url), repr(self.__class__))
+
+	def __hash__(self):
+		return hash((self.url, repr(self.__class__)))
 
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
@@ -38,18 +53,32 @@ class Link:
 		return str(self)
 
 	def is_anchor(self):
+		"""
+		:rtype: bool
+		"""
 		return self._url.startswith('#')
 
 	@property
 	def text(self):
+		"""
+		:rtype: str
+		"""
 		return self._text
 
 	@property
 	def url(self):
+		"""
+		:rtype: str
+		"""
 		return self._url
 
 	@staticmethod
 	def get_url(element, base=None):
+		"""
+		:type element: BeautifulSoup or Tag
+		:type base: str
+		:rtype: str
+		"""
 		try:
 			href = element['href']
 		except KeyError:
@@ -65,6 +94,10 @@ class Link:
 
 	@staticmethod
 	def get_text(element):
+		"""
+		:type element: BeautifulSoup or Tag
+		:rtype: str
+		"""
 		if element is None:
 			return None
 		try:
@@ -72,33 +105,49 @@ class Link:
 		except AttributeError:
 			return None
 
-def parse_link(element, base=None):
+def parse_link(element, base=None, ignore_anchor=False):
+	"""
+	parses an element and returns the link or None or
+	:type element: BeautifulSoup or Tag
+	:type base: str or NoneType
+	:type ignore_anchor: bool
+	:rtype: Link or str or NoneType
+	"""
 	if element is None:
 		return None
 	try:
 		link = Link(element=element, base=base)
 		if link.is_anchor():
-			return clean_html_text(html=element, replace_images=True)
+			if ignore_anchor:
+				return None
+			else:
+				return clean_html_text(html=element, replace_images=True)
 		else:
 			return link
 	except AttributeError:
 		return clean_html_text(html=element, replace_images=True)
 
-def find_links(elements, base):
+def find_links(elements, base=None, ignore_anchors=False):
+	"""
+	parses multiple elements and returns links as a list of Links
+	:type element: BeautifulSoup or Tag
+	:type base: str or NoneType
+	:type ignore_anchor: bool
+	:rtype: list[Link]
+	"""
 	if isinstance(elements, (BeautifulSoup, Tag)):
 		if elements.name == 'a':
 			links = [elements]
 		else:
 			links = elements.find_all(name='a')
 
-		if links is not None:
-			result = [parse_link(element=link, base=base) for link in links]
-			return [x for x in result if x]
-		else:
+		if links is None:
 			return []
+		else:
+			result = [parse_link(element=link, base=base, ignore_anchor=ignore_anchors) for link in links if link is not None]
+			return [x for x in result if isinstance(x, Link)]
 
-	elif isinstance(elements, str):
+	elif isinstance(elements, str) or elements is None:
 		return []
 	else:
 		return [link for element in elements for link in find_links(elements=element, base=base)]
-

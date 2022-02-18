@@ -364,6 +364,12 @@ class Spoon:
 		return self.element_has(element=self.soup, name=name, attributes=attributes, text=text)
 
 	def find_links(self=None, element=None, base_url=None):
+		"""
+
+		:param element:
+		:param base_url:
+		:rtype: list[Link]
+		"""
 		if self is not None:
 			element = element or self.soup
 		return find_links(elements=element, base=base_url)

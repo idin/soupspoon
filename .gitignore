@@ -3,3 +3,4 @@ silverware.egg-info
 dist
 *.lucy
 *.lucy
+.idea
