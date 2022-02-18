@@ -7,11 +7,11 @@ def readme():
 
 
 setup(
-	name='silverware',
-	version='2020.9.18.2',
+	name='soupspoon',
+	version='2022.2.18',
 	license='MIT',
 
-	url='https://github.com/idin/silverware',
+	url='https://github.com/idin/soupspoon',
 	author='Idin',
 	author_email='py@idin.ca',
 

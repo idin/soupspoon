@@ -1,6 +1,6 @@
 build
-silverware.egg-info
+soupspoon.egg-info
 dist
 *.lucy
-*.lucy
 .idea
+.ipynb_checkpoints
