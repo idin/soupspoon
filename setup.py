@@ -8,7 +8,7 @@ def readme():
 
 setup(
 	name='soupspoon',
-	version='2022.2.18',
+	version='2022.4.20',
 	license='MIT',
 
 	url='https://github.com/idin/soupspoon',
